@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MSA Log Analyzer</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include Bootstrap CSS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <style>
+      .container {
+        height: 100vh;
+        display: flex;
+        flex-direction: row;
+      }
+
+      .left-section,
+      .right-section {
+        flex-grow: 1;
+        padding: 10px;
+      }
+
+      .left-section {
+        border-right: 1px solid #ccc;
+      }
+    </style>
   </head>
   <body>
     <input type="file" id="fileInput" onchange="handleFile()" />
@@ -12,7 +32,16 @@
       <span id="progressText">0%</span>
     </div>
     <div id="downloadContainer"></div>
-
+    <div class="container">
+      <div class="left-section">
+        <h3>Object Properties</h3>
+        <ul id="propertyList"></ul>
+      </div>
+      <div class="right-section">
+        <h3>Property Content</h3>
+        <div id="propertyContent"></div>
+      </div>
+    </div>
     <script src="./script.js"></script>
   </body>
 </html>

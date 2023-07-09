@@ -1,5 +1,6 @@
 let logsContent;
 let cData;
+
 //Enter the RegEx values in this section||||||||||||||||||||||
 const systemName =
   '<PROPERTY name="product-id" type="string">([^<]+)</PROPERTY>';
@@ -36,7 +37,6 @@ function handleFile() {
 
   reader.readAsText(file);
 }
-
 //This function will return the data based on the regex provided
 // EG:  '<PROPERTY name="product-id" type="string">([^<]+)</PROPERTY>';
 function extractData(string) {
@@ -101,6 +101,111 @@ function addDownloadButton(data, label, extention) {
   const container = document.getElementById("downloadContainer");
   container.appendChild(downloadButton);
 }
+// This function is to clear the mess and eleminat the need to write all the execution inside fileHandle.
+
+function handleXML(xmlData) {
+  // Assume xmlString contains the XML content retrieved or loaded
+  let xmlString = xmlData;
+  // Assume xmlString contains the XML content retrieved or loaded
+
+  // Regular expression pattern to match the desired block
+  const pattern = /<RESPONSE[^>]*>[\s\S]*?<\/RESPONSE>/g;
+
+  // Extract the blocks of data using the pattern
+  const matches = xmlString.match(pattern);
+  const data = {}; // Object to store the extracted data blocks
+  // Process and use the extracted blocks of data
+  if (matches) {
+    for (let i = 0; i < matches.length; i++) {
+      const blockData = matches[i];
+
+      // Parse the block of data as XML
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(blockData, "text/xml");
+
+      // Extract the REQUEST attribute value of the RESPONSE element
+      const responseElement = xmlDoc.getElementsByTagName("RESPONSE")[0];
+      const requestValue = responseElement.getAttribute("REQUEST");
+
+      // Create an object representing the block data
+      const blockObject = {
+        [requestValue]: {},
+      };
+
+      // Extract the hierarchy of the block data
+      const objectElements = xmlDoc.getElementsByTagName("OBJECT");
+
+      // Process the <OBJECT> elements and their child elements
+      for (let j = 0; j < objectElements.length; j++) {
+        const objectElement = objectElements[j];
+        const propertiesElements =
+          objectElement.getElementsByTagName("PROPERTY");
+        const objectData = {};
+
+        // Process the <PROPERTY> elements
+        for (let k = 0; k < propertiesElements.length; k++) {
+          const propertyElement = propertiesElements[k];
+          const propertyName = propertyElement.getAttribute("name");
+          const propertyValue = propertyElement.textContent.trim();
+
+          objectData[propertyName] = propertyValue;
+        }
+
+        const objectName = objectElement.getAttribute("name");
+        blockObject[requestValue][objectName] = objectData;
+      }
+
+      // Add the block object to the data object
+      Object.assign(data, blockObject);
+    }
+
+    // Output the extracted data preserving the hierarchy
+    console.log(data);
+    // Access the parent container element where the HTML will be generated
+    // Call the generateHTML function with your JSON object and the parent container
+  } else {
+    console.log("No matching blocks of data found.");
+  }
+  const propertyList = $("#propertyList");
+  const propertyContent = $("#propertyContent");
+
+  // Display all properties in the left section
+  for (const property in data) {
+    const listItem = $("<li>").text(property);
+    listItem.on("click", function () {
+      showPropertyContent(property);
+    });
+    propertyList.append(listItem);
+  }
+
+  // Function to show the content of the selected property
+  function showPropertyContent(property) {
+    const content = data[property];
+    if (typeof content === "object") {
+      const contentHTML = createNestedHTML(content);
+      propertyContent.html(contentHTML);
+    } else {
+      propertyContent.text(content);
+    }
+  }
+
+  function createNestedHTML(obj) {
+    let html = "";
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const value = obj[key];
+        if (typeof value === "object") {
+          const nestedHTML = createNestedHTML(value);
+          html += `<p><strong>${key}:</strong></p>`;
+          html += `<div class="nested">${nestedHTML}</div>`;
+        } else {
+          html += `<p>${key}: ${value}</p>`;
+        }
+      }
+    }
+    return html;
+  }
+}
 
 function startProcess() {
   const nameOfSystem = extractData(systemName);
@@ -110,4 +215,5 @@ function startProcess() {
   console.log("C Data:", cData);
   addDownloadButton(fixOriginalLogFile(logsContent), nameOfSystem, "logs");
   addDownloadButton(fixOriginalLogFile(cData), `${nameOfSystem}-Data`, "txt");
+   handleXML(xmlData);
 }
